@@ -1,0 +1,27 @@
+From ee58bd90216ab3fb6b914015fcc4e5461f5d3964 Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 19:10:04 +0000
+Subject: [PATCH] DEBUG: 1 MB log buffers
+
+Diagnostic build only (patches/lineage-23.2-debug, DEBUG_PATCHES=true),
+never published: low-RAM devices default to 64 kB log buffers, which
+overflow before the early-boot eBPF loader logs can be read over adb.
+---
+ system.prop | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/system.prop b/system.prop
+index f0ecab2..ccad032 100644
+--- a/system.prop
++++ b/system.prop
+@@ -99,3 +99,7 @@ log.tag.AW_PowerHAL_Platform=W
+ # cached apps a soft limit of 0 and the launcher one of 8 MB, and the 4.9 kernel's cgroup v1
+ # soft limit reclaim swaps them out first (launcher ANRs, slow switching between apps).
+ ro.config.per_app_memcg=false
++
++# DEBUG (Teclast P80 diagnostics, never publish): low-RAM devices default to 64 kB log
++# buffers, which overflow before early-boot logs can be read over adb.
++persist.logd.size=1M
+-- 
+2.25.1
+

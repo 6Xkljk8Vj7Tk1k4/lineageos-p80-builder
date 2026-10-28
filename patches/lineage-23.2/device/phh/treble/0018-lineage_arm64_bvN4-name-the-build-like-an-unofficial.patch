@@ -1,0 +1,37 @@
+From 437db0e3944fa5a021ee94db1ddeece32eb439ea Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Wed, 28 Oct 2026 11:24:36 +0000
+Subject: [PATCH] lineage_arm64_bvN4: name the build like an unofficial
+ LineageOS build
+
+The version read 23.2-<date>-VANILLA-EXT4-GSI, the naming of the
+generic GSI releases this target comes from. Unofficial LineageOS builds
+are named 23.2-<date>-UNOFFICIAL-<device>; this build only targets the
+Teclast P80 (G3M2), so use that: 23.2-<date>-UNOFFICIAL-P80.
+---
+ lineage_arm64_bvN4.mk | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/lineage_arm64_bvN4.mk b/lineage_arm64_bvN4.mk
+index 911e6c3..0d666de 100644
+--- a/lineage_arm64_bvN4.mk
++++ b/lineage_arm64_bvN4.mk
+@@ -14,11 +14,10 @@ PRODUCT_MANUFACTURER := Teclast
+ # Overwrite the inherited "emulator" characteristics
+ PRODUCT_CHARACTERISTICS := tablet
+ 
+-LINEAGE_BUILDTYPE := VANILLA
+-LINEAGE_BUILD := GSI
+-
+-#EXT4
+-LINEAGE_EXTRAVERSION := -EXT4
++# Teclast P80: LineageOS's name for an unofficial build, 23.2-<date>-UNOFFICIAL-P80 (a build
++# type outside vendor/lineage's list also resets LINEAGE_EXTRAVERSION there).
++LINEAGE_BUILDTYPE := UNOFFICIAL
++LINEAGE_BUILD := P80
+ # The Teclast P80 (G3M2) vendor is VNDK 29; the other snapshots (28, 30-34 from
+ # gsi_release.mk, dropped by this assignment) cost ~380 MB the tablet's super lacks.
+ PRODUCT_EXTRA_VNDK_VERSIONS := 29
+-- 
+2.25.1
+

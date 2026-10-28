@@ -1,0 +1,30 @@
+From b9d1b046dd6c3c0e0274efee1dc079579563ebd0 Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 14:03:53 +0000
+Subject: [PATCH 05/17] rw-system: keep the vendor's privapp permission
+ enforcement
+
+TrebleDroid forces ro.control_privapp_permissions=log at boot, so privileged
+apps may hold permissions nobody allowlisted. LineageOS enforces the
+allowlists, and so does the Teclast P80's stock vendor; a boot of this
+build in enforce mode logged no allowlist violation. Leave the value
+alone.
+---
+ rw-system.sh | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/rw-system.sh b/rw-system.sh
+index 71d2714..e74d28c 100644
+--- a/rw-system.sh
++++ b/rw-system.sh
+@@ -1120,7 +1120,6 @@ if getprop ro.bionic.cpu_variant |grep -q kryo300;then
+     setprop dalvik.vm.isa.arm64.features runtime
+ fi
+ 
+-resetprop_phh ro.control_privapp_permissions log
+ 
+ if [ -f /vendor/etc/init/vendor.ozoaudio.media.c2@1.0-service.rc ];then
+     if [ -n "$vndk" ] && [ "$vndk" -le 29 ]; then
+-- 
+2.53.0
+

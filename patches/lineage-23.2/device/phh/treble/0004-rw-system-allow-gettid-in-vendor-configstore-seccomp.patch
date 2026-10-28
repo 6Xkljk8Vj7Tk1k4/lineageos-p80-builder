@@ -1,0 +1,49 @@
+From 0c5ea4e922dacc397338385cc4696b3b8ff39512 Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 14:03:53 +0000
+Subject: [PATCH 04/17] rw-system: allow gettid in vendor configstore seccomp
+ policies
+
+Android 15 libraries call gettid(), which the seccomp policies shipped
+with Android 10-era vendor configstore HALs do not allow. On the Teclast
+P80 (G3M2) android.hardware.configstore@1.1-service is killed with SIGSYS
+right after every start ("libminijail: blocked syscall: gettid"),
+SurfaceFlinger waits for ISurfaceFlingerConfigs forever and the watchdog
+kills system_server every 67 s, so the boot never completes.
+
+Copy the vendor policy to /mnt/phh, append gettid, restore its SELinux
+context and bind-mount it over the original, the way the keymaster
+workaround above patches vendor files.
+---
+ rw-system.sh | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/rw-system.sh b/rw-system.sh
+index 8eac00f..71d2714 100644
+--- a/rw-system.sh
++++ b/rw-system.sh
+@@ -1132,6 +1132,21 @@ if [ -n "$vndk" ] && [ "$vndk" -le 27 ];then
+     setprop persist.sys.phh.no_present_or_validate true
+ fi
+ 
++# Android 15 libraries call gettid(), which the seccomp policies of Android 10-era vendor
++# configstore HALs do not allow: the HAL dies with SIGSYS, SurfaceFlinger waits for
++# ISurfaceFlingerConfigs forever and the watchdog keeps killing system_server (Teclast P80).
++for f in /vendor/etc/seccomp_policy/configstore@1.0.policy /vendor/etc/seccomp_policy/configstore@1.1.policy; do
++    [ -f "$f" ] || continue
++    grep -q "^gettid:" "$f" && continue
++    # shellcheck disable=SC2010
++    ctxt="$(ls -lZ "$f" | grep -oE "u:object_r:[^:]*:s0")"
++    b="$(echo "$f" | tr / _)"
++    cp -a "$f" "/mnt/phh/$b"
++    echo "gettid: 1" >> "/mnt/phh/$b"
++    chcon "$ctxt" "/mnt/phh/$b"
++    mount -o bind "/mnt/phh/$b" "$f"
++done
++
+ [ -d /mnt/vendor/persist ] && mount /mnt/vendor/persist /persist
+ 
+ if [ -e /sys/bus/i2c/drivers/fts_ts ] || [ -e /sys/bus/spi/drivers/fts_ts ]; then
+-- 
+2.53.0
+

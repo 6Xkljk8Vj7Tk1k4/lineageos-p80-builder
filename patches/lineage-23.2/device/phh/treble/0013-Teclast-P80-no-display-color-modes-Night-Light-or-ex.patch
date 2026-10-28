@@ -1,0 +1,73 @@
+From ead7464ae6099b4a4d3ecff3efde1d1de3c8083e Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 15:56:49 +0000
+Subject: [PATCH 13/17] Teclast P80: no display color modes, Night Light or
+ extra dim
+
+The Allwinner composer cannot apply SurfaceFlinger color matrices: any
+non-identity matrix (Boosted/Saturated color modes, Night Light, extra
+dim) makes SurfaceFlinger compose every layer on the GPU, which made the
+UI sluggish (with Natural, YouTube 720p in the browser plays smoothly).
+
+- Empty config_availableColorModes, so Settings hides "Colors".
+- Drop TrebleDroid's NightMode overlay.
+- Set config_setColorTransformAccelerated to false over LineageOS's
+  common overlay, which sets it to true: Night Light and extra dim
+  default to this value, and Settings then lists color correction under
+  "Experimental", as AOSP does for such hardware. Accessibility color
+  inversion and correction stay available.
+---
+ base.mk                                          |  2 +-
+ .../base/core/res/res/values/config.xml          | 16 ++++++++--------
+ 2 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/base.mk b/base.mk
+index b45e887..1b4cbf3 100644
+--- a/base.mk
++++ b/base.mk
+@@ -17,11 +17,11 @@ SYSTEM_EXT_PRIVATE_SEPOLICY_DIRS += device/phh/treble/sepolicy
+ PRODUCT_PACKAGE_OVERLAYS += device/phh/treble/overlay
+ 
+ # Only the generic TrebleDroid overlays that apply to the Teclast P80: no TrebleApp, no
++# NightMode (accelerated color transforms force GPU composition on this composer), no
+ # overlays for other devices, no IMS/telephony ones, no WifiOverlay (it also allows
+ # enterprise Wi-Fi without server certificate validation).
+ PRODUCT_PACKAGES += \
+     treble-overlay-highpriomisc \
+-    treble-overlay-NightMode \
+     treble-overlay-tethering
+ $(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit.mk)
+ $(call inherit-product, $(SRC_TARGET_DIR)/product/aosp_base_telephony.mk)
+diff --git a/overlay/frameworks/base/core/res/res/values/config.xml b/overlay/frameworks/base/core/res/res/values/config.xml
+index b832a66..95ec45a 100644
+--- a/overlay/frameworks/base/core/res/res/values/config.xml
++++ b/overlay/frameworks/base/core/res/res/values/config.xml
+@@ -35,17 +35,17 @@
+ 
+ 	<bool name="config_cellBroadcastAppLinks">true</bool>
+ 
++    <!-- Teclast P80: no display color modes. Boosted/Saturated are SurfaceFlinger color
++         matrices the Allwinner composer cannot apply, so they force GPU composition of
++         every layer; with an empty list Settings hides "Colors". -->
+     <array name="config_availableColorModes">
+-        <!-- ColorDisplayManager.COLOR_MODE_NATURAL -->
+-        <item>0</item>
+-        <!-- ColorDisplayManager.COLOR_MODE_BOOSTED -->
+-        <item>1</item>
+-        <!-- ColorDisplayManager.COLOR_MODE_SATURATED -->
+-        <item>2</item>
+-        <!-- ColorDisplayManager.COLOR_MODE_AUTOMATIC -->
+-        <item>3</item>
+     </array>
+ 
++    <!-- Teclast P80: LineageOS's common overlay claims hardware color transforms, but the
++         Allwinner composer falls back to GPU composition for them. Night Light and extra dim
++         default to this value; Settings lists color correction under "Experimental". -->
++    <bool name="config_setColorTransformAccelerated">false</bool>
++
+     <bool name="config_supportAudioSourceUnprocessed">true</bool>
+ 
+     <string-array name="config_packagesExemptFromSuspension" translatable="false">
+-- 
+2.53.0
+

@@ -1,0 +1,72 @@
+From 9ec38765494312549ac155a9b8764ed573aff997 Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 19:52:00 +0100
+Subject: [PATCH 14/17] Teclast P80: no wallet, no hotspot or tethering
+
+The tablet has neither NFC nor a modem. Drop "wallet" from the default
+quick settings tiles (both lists: Android 16's SystemUI takes them from
+quick_settings_tiles_new_default), leave out the QuickAccessWallet
+power-menu plugin, and set ro.tether.denied=true so Settings and the
+quick settings hide hotspot and tethering.
+---
+ .../base/packages/SystemUI/res/values/config.xml           | 11 +++++++++++
+ overrides/Android.mk                                       |  6 ++++--
+ system.prop                                                |  3 +++
+ 3 files changed, 18 insertions(+), 2 deletions(-)
+ create mode 100644 overlay/frameworks/base/packages/SystemUI/res/values/config.xml
+
+diff --git a/overlay/frameworks/base/packages/SystemUI/res/values/config.xml b/overlay/frameworks/base/packages/SystemUI/res/values/config.xml
+new file mode 100644
+index 0000000..6747146
+--- /dev/null
++++ b/overlay/frameworks/base/packages/SystemUI/res/values/config.xml
+@@ -0,0 +1,11 @@
++<?xml version="1.0" encoding="utf-8"?>
++<resources>
++    <!-- Teclast P80: AOSP's default tiles without "wallet" (no payment app, no NFC). -->
++    <string name="quick_settings_tiles_default" translatable="false">
++        internet,bt,flashlight,dnd,alarm,airplane,controls,rotation,battery,cast,screenrecord,mictoggle,cameratoggle,custom(com.android.permissioncontroller/.permission.service.v33.SafetyCenterQsTileService)
++    </string>
++    <!-- The same for the new quick settings UI, the one Android 16 uses. -->
++    <string name="quick_settings_tiles_new_default" translatable="false">
++        internet,bt,dnd,cast,flashlight,airplane,rotation,alarm,controls,screenrecord,battery
++    </string>
++</resources>
+diff --git a/overrides/Android.mk b/overrides/Android.mk
+index 1b8db72..1657b41 100644
+--- a/overrides/Android.mk
++++ b/overrides/Android.mk
+@@ -74,7 +74,8 @@ LOCAL_SRC_FILES := nothing.txt
+ LOCAL_UNINSTALLABLE_MODULE := true
+ include $(BUILD_PREBUILT)
+ 
+-# Teclast P80: a Wi-Fi-only tablet. The AOSP GSI base still installs these phone apps
++# Teclast P80: a Wi-Fi-only tablet without NFC. The AOSP GSI base still installs these phone
++# apps and the wallet power-menu plugin
+ # (telephony_product.mk, aosp_product.mk, generic_system.mk).
+ include $(CLEAR_VARS)
+ LOCAL_MODULE := p80-wifi-tablet-overrides
+@@ -82,7 +83,8 @@ PACKAGES.$(LOCAL_MODULE).OVERRIDES := \
+ 	Dialer \
+ 	messaging \
+ 	Stk \
+-	ImsServiceEntitlement
++	ImsServiceEntitlement \
++	QuickAccessWallet
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE_CLASS := ETC
+ LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)
+diff --git a/system.prop b/system.prop
+index 83ddeaa..15dbb56 100644
+--- a/system.prop
++++ b/system.prop
+@@ -81,3 +81,6 @@ bluetooth.core.le.vendor_capabilities.enabled=false
+ # matrix the Teclast P80's composer cannot apply: every layer then falls back to GPU
+ # composition. Verified on the tablet: Natural = all layers DEVICE, Boosted = all CLIENT.
+ persist.sys.sf.color_saturation=1.0
++
++# Teclast P80: no modem, so there is nothing to share; hide hotspot and tethering.
++ro.tether.denied=true
+-- 
+2.53.0
+

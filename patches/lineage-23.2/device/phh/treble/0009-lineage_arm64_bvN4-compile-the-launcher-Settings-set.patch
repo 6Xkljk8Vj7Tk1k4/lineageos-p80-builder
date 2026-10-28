@@ -1,0 +1,34 @@
+From a40d78437909d0ea09c70d717efd692b25c9b4a5 Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 15:01:35 +0000
+Subject: [PATCH 09/17] lineage_arm64_bvN4: compile the launcher, Settings,
+ setup wizard and browser ahead of time
+
+On the Teclast P80 (4x Cortex-A53, 2 GB RAM) these apps ran in the
+"verify" state after the first boot, i.e. interpreted or JIT-compiled
+until background dexopt reaches them, and the setup wizard and launcher
+felt slow. Compiling them with "speed" on the tablet made the difference
+noticeable, so do it at build time.
+---
+ lineage_arm64_bvN4.mk | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/lineage_arm64_bvN4.mk b/lineage_arm64_bvN4.mk
+index 6a454bf..17c514f 100644
+--- a/lineage_arm64_bvN4.mk
++++ b/lineage_arm64_bvN4.mk
+@@ -22,3 +22,11 @@ LINEAGE_EXTRAVERSION := -EXT4
+ # The Teclast P80 (G3M2) vendor is VNDK 29; the other snapshots (28, 30-34 from
+ # gsi_release.mk, dropped by this assignment) cost ~380 MB the tablet's super lacks.
+ PRODUCT_EXTRA_VNDK_VERSIONS := 29
++
++# Teclast P80 (4x Cortex-A53, 2 GB RAM): compile the apps used every day ahead of time
++# instead of running them interpreted/JIT until background dexopt reaches them.
++PRODUCT_DEXPREOPT_SPEED_APPS += \
++    TrebuchetQuickStep \
++    Settings \
++    LineageSetupWizard \
++    Jelly
+-- 
+2.53.0
+

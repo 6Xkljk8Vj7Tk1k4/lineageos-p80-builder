@@ -1,0 +1,33 @@
+From 5f58a9b8c836097bf8c9e66a2b65107cf9d2691a Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 19:52:00 +0100
+Subject: [PATCH 12/17] system.prop: default to the Natural display color mode
+
+Without persist.sys.sf.color_saturation=1.0 ColorDisplayService picks
+COLOR_MODE_BOOSTED, and with accelerated color transforms (TrebleDroid's
+NightMode overlay) it hands SurfaceFlinger a saturation matrix. The
+Teclast P80's Allwinner composer cannot apply arbitrary matrices, so
+SurfaceFlinger composed every layer on the GPU all the time. With Natural
+the matrix is identity and all layers go to the composer (verified with
+dumpsys SurfaceFlinger: CLIENT -> DEVICE). Boosted stays selectable.
+---
+ system.prop | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/system.prop b/system.prop
+index 3965bea..83ddeaa 100644
+--- a/system.prop
++++ b/system.prop
+@@ -75,3 +75,9 @@ debug.sf.no_vsyncs_on_screen_off=false
+ # second event aborts the Bluetooth stack (gd HciLayer "without a waiting command").
+ # Without LE vendor capabilities the stack never sends APCF; verified on the tablet.
+ bluetooth.core.le.vendor_capabilities.enabled=false
++
++# Default to the "Natural" display color mode. AOSP picks "Boosted" when this is unset, and
++# with TrebleDroid's NightMode overlay (accelerated color transforms) that is a non-identity
++# matrix the Teclast P80's composer cannot apply: every layer then falls back to GPU
++# composition. Verified on the tablet: Natural = all layers DEVICE, Boosted = all CLIENT.
++persist.sys.sf.color_saturation=1.0
+-- 
+2.53.0
+

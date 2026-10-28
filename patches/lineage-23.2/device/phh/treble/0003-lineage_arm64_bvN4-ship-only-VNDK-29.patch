@@ -1,0 +1,29 @@
+From ec93409bb60d3f9d9b9b41043ac9e6c91ea671ec Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 13:28:02 +0000
+Subject: [PATCH 03/17] lineage_arm64_bvN4: ship only VNDK 29
+
+The Teclast P80 (G3M2) runs an Android 10 vendor (VNDK 29). The default
+set (28 and 29 from TrebleDroid, 30-34 from gsi_release.mk) makes the
+system image ~28 MiB larger than the tablet's super partition allows;
+the unused snapshots are ~380 MB. Assigning with := also drops the
+versions inherited from gsi_release.mk.
+---
+ lineage_arm64_bvN4.mk | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/lineage_arm64_bvN4.mk b/lineage_arm64_bvN4.mk
+index 1990ecb..13ff8c9 100644
+--- a/lineage_arm64_bvN4.mk
++++ b/lineage_arm64_bvN4.mk
+@@ -17,4 +17,6 @@ LINEAGE_BUILD := GSI
+ 
+ #EXT4
+ LINEAGE_EXTRAVERSION := -EXT4
+-PRODUCT_EXTRA_VNDK_VERSIONS += 28 29
++# The Teclast P80 (G3M2) vendor is VNDK 29; the other snapshots (28, 30-34 from
++# gsi_release.mk, dropped by this assignment) cost ~380 MB the tablet's super lacks.
++PRODUCT_EXTRA_VNDK_VERSIONS := 29
+-- 
+2.53.0
+

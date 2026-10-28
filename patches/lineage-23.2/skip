@@ -1,0 +1,42 @@
+# Upstream patches build.sh leaves out
+# (one "trebledroid|trebledroid-staging|personal/<directory>/<file>" per line).
+#
+# A clean LineageOS for public release: none of MisterZtr's own additions that LineageOS does
+# not have. Kept from his set: build targets and VNDK choice
+# (device_phh_treble 0001, 0002, 0004, 0005, 0007, 0009, 0010), the product.prop the bvN4 target
+# does not use (0006), LineageOS build types (vendor_lineage 0001), no APN handling and the other
+# build fixes (platform_build, external_selinux, hardware_oplus), the eBPF firewall fallback
+# (Connectivity 0001), TrebleApp packaging and the user-build sepolicy allowance (no effect on
+# userdebug).
+#
+# Security: "securize" by default makes the system claim a locked bootloader and green verified
+# boot (ro.boot.verifiedbootstate, ro.boot.flash.locked, vbmeta device_state, release-keys tags,
+# sys.oem_unlock_allowed 0) to pass integrity checks; LineageOS does not lie about the device
+# state. The adb patch only exists to make adbd follow ro.adb.secure under that spoofing.
+personal/device_phh_treble/0003-securize-rework-to-property-based-toggle-with-GSI-fi.patch
+personal/platform_packages_modules_adb/0001-Always-read-ro.adb.secure-to-determine-auth-requirem.patch
+# Removes the neverallow that keeps crash_dump from ptracing init.
+personal/platform_system_sepolicy/0002-sepolicy-allow-crash_dump-to-ptrace-init-for-GSI-tombstone-capture.patch
+# Compiles the userdebug policy into user builds and drops "permissive su" (no effect on what a
+# userdebug build gets, except that adb root becomes useless for diagnostics).
+personal/platform_system_sepolicy/0003-Always-compile-sepolicy-as-userdebug-variant-for-GSI.patch
+# privapp permissions "log" instead of LineageOS's "enforce" (stock P80 runs "enforce").
+personal/platform_vendor_lineage/0002-config-Log-privapp-permissions-whitelist-violations.patch
+# Hides "OEM unlocking" in Developer options; switching it off does not relock the bootloader.
+personal/platform_packages_apps_Settings/0001-Hide-OEM-unlocking-toggle-from-Developer-Options.patch
+# Behaviour and look changes: Bluetooth off by default, refresh rate and UI tweaks.
+personal/platform_frameworks_base/0001-Disable-Bluetooth-by-default.patch
+personal/device_phh_treble/0008-overlay-Add-min-max-refresh-rate-and-tweak-UI.patch
+# App feature additions (the P80 build leaves Messaging out anyway).
+personal/packages_apps_Messaging/0001-Messaging-Add-Mark-as-read-quick-action-for-message-.patch
+personal/packages_apps_Messaging/0002-Properly-set-conversation-as-read.patch
+# Its hunk ends at the old last line of rw-system.sh, so git anchors it at the end of the file;
+# TrebleDroid has since appended a block after that line and it no longer applies. The unguarded
+# write to goodix's support_pen only logs an error on other devices.
+trebledroid-staging/platform_device_phh_treble/0002-guard-goodix-sysfs-write-behind-existence-check.patch
+# Forces an HWC power OFF and ON at boot (for MTK HWCs left on by the bootloader). The Allwinner
+# display driver drops a runtime-PM reference on that first OFF but takes none on the following ON
+# (its "power_status_init" path), so /sys/devices/platform/soc/6000000.disp ends with usage -1 and
+# autosuspends 5 s after every screen-on: a black screen while Android believes it is on. Upstream
+# SurfaceFlinger skips the OFF (its state is already OFF) and the counter stays balanced.
+trebledroid-staging/platform_frameworks_native/0006-fix-display-power-on-for-vendor-HWCs-with-stale-boot.patch

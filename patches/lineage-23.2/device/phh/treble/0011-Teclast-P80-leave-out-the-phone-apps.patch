@@ -1,0 +1,52 @@
+From f3cb828f1c4ab8416914384af3ec036d8b158e38 Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 19:52:00 +0100
+Subject: [PATCH 11/17] Teclast P80: leave out the phone apps
+
+LineageOS's Wi-Fi-only tablet configuration does not add them, but the
+AOSP GSI base still installs Dialer, messaging, Stk and
+ImsServiceEntitlement. Override them with an uninstallable module, the
+way phh-gapps-overrides removes packages.
+---
+ lineage_arm64_bvN4.mk |  3 +++
+ overrides/Android.mk  | 16 ++++++++++++++++
+ 2 files changed, 19 insertions(+)
+
+diff --git a/lineage_arm64_bvN4.mk b/lineage_arm64_bvN4.mk
+index ddd8249..4776765 100644
+--- a/lineage_arm64_bvN4.mk
++++ b/lineage_arm64_bvN4.mk
+@@ -35,3 +35,6 @@ PRODUCT_DEXPREOPT_SPEED_APPS += \
+ # vendor's by rw-system.sh.
+ PRODUCT_COPY_FILES += \
+     device/phh/treble/p80/media_profiles_V1_0.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/p80/media_profiles_V1_0.xml
++
++# Teclast P80: no phone, SMS or SIM toolkit apps on this Wi-Fi-only tablet.
++PRODUCT_PACKAGES += p80-wifi-tablet-overrides
+diff --git a/overrides/Android.mk b/overrides/Android.mk
+index 813d66b..1b8db72 100644
+--- a/overrides/Android.mk
++++ b/overrides/Android.mk
+@@ -73,3 +73,19 @@ LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)
+ LOCAL_SRC_FILES := nothing.txt
+ LOCAL_UNINSTALLABLE_MODULE := true
+ include $(BUILD_PREBUILT)
++
++# Teclast P80: a Wi-Fi-only tablet. The AOSP GSI base still installs these phone apps
++# (telephony_product.mk, aosp_product.mk, generic_system.mk).
++include $(CLEAR_VARS)
++LOCAL_MODULE := p80-wifi-tablet-overrides
++PACKAGES.$(LOCAL_MODULE).OVERRIDES := \
++	Dialer \
++	messaging \
++	Stk \
++	ImsServiceEntitlement
++LOCAL_MODULE_TAGS := optional
++LOCAL_MODULE_CLASS := ETC
++LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)
++LOCAL_SRC_FILES := nothing.txt
++LOCAL_UNINSTALLABLE_MODULE := true
++include $(BUILD_PREBUILT)
+-- 
+2.53.0
+

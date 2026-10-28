@@ -1,0 +1,28 @@
+From 2b0c8eebc9f6fa0c5a21eff7c26e370750a43b98 Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 19:52:00 +0100
+Subject: [PATCH 02/17] Use LineageOS's adb defaults
+
+TrebleDroid enables adb by default (persist.sys.usb.config=adb in
+base.mk); MisterZtr's "remove stale property overrides" already dropped
+its ro.adb.secure=0. Leave both to LineageOS: adb off and authorized
+(ro.adb.secure=1) unless WITH_ADB_INSECURE is set for a test build.
+---
+ base.mk | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/base.mk b/base.mk
+index 26eea3f..9884e8d 100644
+--- a/base.mk
++++ b/base.mk
+@@ -38,7 +38,6 @@ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
+ 
+ # Huawei HiSuite (also other OEM custom programs I guess) it's of no use in AOSP builds
+ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
+-    persist.sys.usb.config=adb \
+     ro.cust.cdrom=/dev/null
+ 
+ # VNDK config files
+-- 
+2.53.0
+

@@ -1,0 +1,41 @@
+From 058685f86abf556ba33be7735f833de0fcdb8025 Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 19:52:00 +0100
+Subject: [PATCH 16/17] lineage_arm64_bvN4: compile for the GC the Teclast P80
+ kernel supports
+
+gsi_release.mk sets PRODUCT_ENABLE_UFFD_GC := true because a GSI cannot
+know the kernel, so dex2oat compiles the boot image, the system_server
+jars and the apps for the userfaultfd GC, without read barriers
+(concurrent-copying=false in their oat headers). The P80's 4.9 kernel
+is built without CONFIG_USERFAULTFD (and has no MREMAP_DONTUNMAP), so ART
+falls back to the concurrent copying GC and rejects all of that code:
+odrefresh recompiles the boot image and system_server into /data on the
+first boot (90 MB), and 99 packages, among them SystemUI, the launcher,
+Settings and the setup wizard that the build compiles with "speed", run
+from their vdex only (status=verify, reason=vdex) until background
+dexopt gets to them on a charging, idle tablet.
+
+Compile everything for the concurrent copying GC instead.
+---
+ lineage_arm64_bvN4.mk | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/lineage_arm64_bvN4.mk b/lineage_arm64_bvN4.mk
+index 4776765..911e6c3 100644
+--- a/lineage_arm64_bvN4.mk
++++ b/lineage_arm64_bvN4.mk
+@@ -38,3 +38,10 @@ PRODUCT_COPY_FILES += \
+ 
+ # Teclast P80: no phone, SMS or SIM toolkit apps on this Wi-Fi-only tablet.
+ PRODUCT_PACKAGES += p80-wifi-tablet-overrides
++
++# Teclast P80: the 4.9 kernel has no userfaultfd, so ART runs the concurrent copying GC.
++# gsi_release.mk compiles the boot image, system_server and the apps for the userfaultfd GC;
++# ART rejects that code here ("read barrier state mismatch"), recompiles the boot image and
++# system_server into /data on the first boot and runs the apps from their vdex until
++# background dexopt reaches them. Compile for the concurrent copying GC instead.
++PRODUCT_ENABLE_UFFD_GC := false
+-- 
+2.53.0
+

@@ -1,0 +1,99 @@
+From 7d8bc0fd11f1b5bf21b95ea26204c88ea31b4bf9 Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 23:19:48 +0000
+Subject: [PATCH] DEBUG: black box and panic reboot for stalled boots
+
+Diagnostic build only (patches/lineage-23.2-debug, DEBUG_PATCHES=true),
+never published. The P80's kernel has CONFIG_PANIC_TIMEOUT=0 and no adb
+comes up when a boot stalls before "on boot", so a DSU test can hang the
+tablet with nothing to read. Set kernel.panic to 10 s at early-init, and
+from "on init" record dmesg (init logs every action there), the tail of
+logcat, properties and processes every 5 s on /metadata (mounted by the
+first stage, shared with the installed system); reboot through sysrq
+when the boot has not completed after 10 minutes, so a DSU image falls
+back on its own even when init itself is stuck.
+---
+ lineage_arm64_bvN4.mk  |  5 +++++
+ p80/debug/p80-debug.rc | 15 +++++++++++++++
+ p80/debug/p80-debug.sh | 34 ++++++++++++++++++++++++++++++++++
+ 3 files changed, 54 insertions(+)
+ create mode 100644 p80/debug/p80-debug.rc
+ create mode 100644 p80/debug/p80-debug.sh
+
+diff --git a/lineage_arm64_bvN4.mk b/lineage_arm64_bvN4.mk
+index 911e6c3..d5870fc 100644
+--- a/lineage_arm64_bvN4.mk
++++ b/lineage_arm64_bvN4.mk
+@@ -45,3 +45,8 @@ PRODUCT_PACKAGES += p80-wifi-tablet-overrides
+ # system_server into /data on the first boot and runs the apps from their vdex until
+ # background dexopt reaches them. Compile for the concurrent copying GC instead.
+ PRODUCT_ENABLE_UFFD_GC := false
++
++# DEBUG (Teclast P80 diagnostics, never publish): black box for stalled boots.
++PRODUCT_COPY_FILES += \
++    device/phh/treble/p80/debug/p80-debug.sh:$(TARGET_COPY_OUT_SYSTEM)/bin/p80-debug.sh \
++    device/phh/treble/p80/debug/p80-debug.rc:$(TARGET_COPY_OUT_SYSTEM)/etc/init/p80-debug.rc
+diff --git a/p80/debug/p80-debug.rc b/p80/debug/p80-debug.rc
+new file mode 100644
+index 0000000..3fe7dc3
+--- /dev/null
++++ b/p80/debug/p80-debug.rc
+@@ -0,0 +1,15 @@
++# DEBUG (Teclast P80 diagnostics, never publish): the kernel's CONFIG_PANIC_TIMEOUT is 0, so a
++# panic would hang the tablet; reboot 10 s after one instead, and record the boot on /metadata
++# from "on init" on (a stall before post-fs left no trace on /cache).
++on early-init
++    write /proc/sys/kernel/panic 10
++
++on init
++    start p80-debug
++
++service p80-debug /system/bin/sh /system/bin/p80-debug.sh
++    user root
++    group root log
++    seclabel u:r:phhsu_daemon:s0
++    oneshot
++    disabled
+diff --git a/p80/debug/p80-debug.sh b/p80/debug/p80-debug.sh
+new file mode 100644
+index 0000000..5aa86b3
+--- /dev/null
++++ b/p80/debug/p80-debug.sh
+@@ -0,0 +1,34 @@
++#!/system/bin/sh
++# DEBUG (Teclast P80 diagnostics, never publish): a black box for boots that stall or crash.
++# Started at "on init": every 5 s the kernel log (init logs every action there), the tail of
++# logcat, properties and processes go to /metadata/p80-debug, which the first stage mounts and
++# the installed system can read after the next boot. A boot that has not completed after
++# 10 min is rebooted through sysrq, which does not depend on init (that may be what is stuck).
++d=/metadata/p80-debug
++mkdir -p $d
++rm -f $d/*
++n=0
++while [ $n -lt 120 ]; do
++    dmesg > $d/dmesg.txt 2>&1
++    logcat -b all -d -t 3000 -v threadtime > $d/logcat.txt 2>&1
++    getprop > $d/getprop.txt 2>&1
++    ps -A -o PID,PPID,NAME,STAT,WCHAN > $d/ps.txt 2>&1
++    logcat -d -v threadtime -s 'apexd:*' 'apexd-bootstrap:*' 'linkerconfig:*' > $d/apexd.txt 2>&1
++    { ls -la /apex; cat /apex/apex-info-list.xml; grep -E ' /apex|/data ' /proc/mounts;
++      ls -laR /data/apex 2>&1 | head -150; df /data /metadata; } > $d/apex-state.txt 2>&1
++    # early copies: the kernel log ring is small and later floods with display errors
++    case $n in 3|6|12)
++        dmesg > $d/dmesg-$n.txt 2>&1
++        logcat -b all -d -v threadtime | head -6000 > $d/logcat-early-$n.txt 2>&1 ;;
++    esac
++    echo "$n $(cat /proc/uptime)" > $d/progress.txt
++    sync
++    [ "$(getprop sys.boot_completed)" = 1 ] && exit 0
++    sleep 5
++    n=$((n + 1))
++done
++echo "boot stalled, rebooting" >> $d/progress.txt
++sync
++echo s > /proc/sysrq-trigger
++echo u > /proc/sysrq-trigger
++echo b > /proc/sysrq-trigger
+-- 
+2.25.1
+

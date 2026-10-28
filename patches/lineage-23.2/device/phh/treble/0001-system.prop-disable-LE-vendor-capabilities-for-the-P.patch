@@ -1,0 +1,33 @@
+From 41085ee25c2341fce4a5dad89dffbdaab73e6306 Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 19:52:00 +0100
+Subject: [PATCH 01/17] system.prop: disable LE vendor capabilities for the
+ P80's Bluetooth controller
+
+The Unisoc UWE5622 controller in the Teclast P80 (G3M2) replies to the
+vendor APCF command (LE_ADV_FILTER, opcode 0xfd57, sub-command 0xff) with
+"Unknown HCI Command" twice, as Command Complete and as Command Status.
+The stack consumes the first and aborts on the second, so Bluetooth
+crash-loops. With bluetooth.core.le.vendor_capabilities.enabled=false the
+stack never sends APCF and Bluetooth turns on (tested on LineageOS 21).
+---
+ system.prop | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/system.prop b/system.prop
+index 41a0688..3965bea 100644
+--- a/system.prop
++++ b/system.prop
+@@ -69,3 +69,9 @@ dalvik.vm.heapsize?=512m
+ # state and composition stalls.  disabling it restores QPR0 behaviour
+ # where synthetic vsync keeps composition alive as a fallback.
+ debug.sf.no_vsyncs_on_screen_off=false
++
++# Teclast P80 (Unisoc UWE5622): the controller answers the vendor APCF command
++# (LE_ADV_FILTER, 0xfd57) with both Command Complete and Command Status, and the
++# second event aborts the Bluetooth stack (gd HciLayer "without a waiting command").
++# Without LE vendor capabilities the stack never sends APCF; verified on the tablet.
++bluetooth.core.le.vendor_capabilities.enabled=false
+-- 
+2.53.0
+

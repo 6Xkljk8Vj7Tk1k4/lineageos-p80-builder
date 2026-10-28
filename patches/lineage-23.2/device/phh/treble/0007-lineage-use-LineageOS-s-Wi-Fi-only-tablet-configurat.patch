@@ -1,0 +1,35 @@
+From 2e606640f9c5c9f8ac7a04a566ce7c1e8c1bba0a Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 19:52:00 +0100
+Subject: [PATCH 07/17] lineage: use LineageOS's Wi-Fi-only tablet
+ configuration
+
+The Teclast P80 has no modem. Inherit common_full_tablet_wifionly.mk
+instead of the phone configuration: no Dialer,
+Messaging or APN database, and LineageOS's wifionly overlay marks the
+device as not voice/SMS/mobile-data capable with no SIM slots.
+---
+ lineage.mk | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/lineage.mk b/lineage.mk
+index 527e4a1..85cf86f 100644
+--- a/lineage.mk
++++ b/lineage.mk
+@@ -1,4 +1,4 @@
+-$(call inherit-product, vendor/lineage/config/common_full_phone.mk)
++$(call inherit-product, vendor/lineage/config/common_full_tablet_wifionly.mk)
+ $(call inherit-product, vendor/lineage/config/BoardConfigSoong.mk)
+ $(call inherit-product, vendor/lineage/config/BoardConfigLineage.mk)
+ $(call inherit-product, device/lineage/sepolicy/common/sepolicy.mk)
+@@ -11,7 +11,6 @@ PRODUCT_MANUFACTURER := google
+ TARGET_BOOT_ANIMATION_RES := 1080
+ 
+ # APN
+-PRODUCT_PACKAGES += apns-conf.xml
+ 
+ #Oplus fingerprint
+ $(call soong_config_set,surfaceflinger,udfps_lib,//hardware/oplus:libudfps_extension.oplus)
+-- 
+2.53.0
+

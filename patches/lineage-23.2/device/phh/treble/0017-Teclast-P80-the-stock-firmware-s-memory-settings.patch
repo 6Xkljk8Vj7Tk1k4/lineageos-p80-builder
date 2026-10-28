@@ -1,0 +1,62 @@
+From 287f2be171d7d03527d045c7f37c4a9cde1a7100 Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 19:52:00 +0100
+Subject: [PATCH 17/17] Teclast P80: the stock firmware's memory settings
+
+The stock Android 10 system partition sets ro.config.per_app_memcg=false,
+ro.lmk.critical_upgrade=true and dalvik.vm.heapgrowthlimit=128m next to
+the vendor's lmkd tuning; the GSI sets none of them. With the vendor's
+ro.config.low_ram=true, per-app memory cgroups then default to on: lmkd
+gives cached apps a memcg soft limit of 0 and the launcher one of 8 MB,
+and the 4.9 kernel's cgroup v1 soft limit reclaim swaps exactly those
+apps out first.
+
+tools/p80-appswitch.sh (7 apps launched twice after a framework restart,
+settings switched on the running system with resetprop, two runs per
+setting, A-B and B-A), current vs stock settings:
+- swapped out / in: ~180 / ~111 MB vs ~5 / 0 MB
+- major page faults: ~30,000 vs ~1,100
+- second round, apps still in memory: 7.7-9.7 s vs 2.7-2.9 s
+- first round: 17.3-22.2 s vs 12.2-16.4 s
+- memory PSI "some": 25-75 s vs 11-23 s; kswapd0 CPU 28-96 s vs 18-38 s
+- launcher ANRs (one waited 24 s for input): 2 vs 0
+---
+ system.prop | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/system.prop b/system.prop
+index 7ab80b4..f0ecab2 100644
+--- a/system.prop
++++ b/system.prop
+@@ -52,14 +52,14 @@ vendor.usb.use_ffs_mtp=1
+ # lmkd tuning: safe defaults for GSI across diverse hardware
+ # Disable critical_upgrade to prevent overly aggressive kills on devices
+ # where memory pressure detection may not work correctly (e.g., older kernels)
+-ro.lmk.critical_upgrade=false
++ro.lmk.critical_upgrade=true
+ # Kill heaviest task first for more predictable memory management
+-ro.lmk.kill_heaviest_task=true
++ro.lmk.kill_heaviest_task=false
+ 
+ # Heap floor: vendor build.prop values as low as 16m are seen in the wild.
+ # Android 16 system_server needs ~200m+ to initialise; override with a safe
+ # minimum while preserving larger vendor values via the ? default operator.
+-dalvik.vm.heapgrowthlimit?=256m
++dalvik.vm.heapgrowthlimit=128m
+ dalvik.vm.heapsize?=512m
+ 
+ # disable QPR2 vsync omission optimisation for GSI compatibility.
+@@ -92,3 +92,10 @@ ro.tether.denied=true
+ log.tag.audio_platform=W
+ log.tag.AW_PowerHAL=W
+ log.tag.AW_PowerHAL_Platform=W
++
++# Teclast P80: the stock firmware's memory settings, which the vendor's lmkd tuning (ro.lmk.* in
++# /vendor/build.prop) was made for (they replace TrebleDroid's GSI defaults above). Without
++# ro.config.per_app_memcg=false, ro.config.low_ram turns per-app memory cgroups on: lmkd gives
++# cached apps a soft limit of 0 and the launcher one of 8 MB, and the 4.9 kernel's cgroup v1
++# soft limit reclaim swaps them out first (launcher ANRs, slow switching between apps).
++ro.config.per_app_memcg=false
+-- 
+2.53.0
+

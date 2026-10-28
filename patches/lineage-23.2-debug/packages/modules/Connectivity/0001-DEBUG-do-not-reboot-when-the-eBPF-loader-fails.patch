@@ -1,0 +1,44 @@
+From d3ea841e6ed4aeb39e3ba6ba5d3c5a2bf2070672 Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 19:10:04 +0000
+Subject: [PATCH] DEBUG: do not reboot when the eBPF loader fails
+
+Diagnostic build only (patches/lineage-23.2-debug, DEBUG_PATCHES=true),
+never published: following the "How to debug bootloops caused by
+'bpfloader-failed'" notes in netbpfload.35rc, keep booting after the
+loader (or the platform stub that runs when the Tethering APEX does not
+override it) fails, so adb can show why on the 4.9 kernel.
+
+Change-Id: I43d4254151f2a2d019499168a2f4f0a4bc6d031a
+---
+ bpf/loader/netbpfload.35rc | 3 ++-
+ bpf/loader/netbpfload.rc   | 3 ++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/bpf/loader/netbpfload.35rc b/bpf/loader/netbpfload.35rc
+index a23bd60..f86ff14 100644
+--- a/bpf/loader/netbpfload.35rc
++++ b/bpf/loader/netbpfload.35rc
+@@ -65,5 +65,6 @@ service bpfloader /apex/com.android.tethering/bin/netbpfload
+     #    'cannot prove return value is 0 or 1' or 'unsupported / unknown operation / helper',
+     #    'invalid bpf_context access', etc.
+     #
+-    reboot_on_failure reboot,bpfloader-failed
++    # DEBUG (Teclast P80 diagnostics, never publish):
++    #reboot_on_failure reboot,bpfloader-failed
+     override
+diff --git a/bpf/loader/netbpfload.rc b/bpf/loader/netbpfload.rc
+index 0430dfe..4dcbbcf 100644
+--- a/bpf/loader/netbpfload.rc
++++ b/bpf/loader/netbpfload.rc
+@@ -12,5 +12,6 @@
+ service bpfloader /system/bin/false
+     user root
+     oneshot
+-    reboot_on_failure reboot,netbpfload-missing
++    # DEBUG (Teclast P80 diagnostics, never publish):
++    #reboot_on_failure reboot,netbpfload-missing
+     updatable
+-- 
+2.25.1
+

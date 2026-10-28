@@ -1,0 +1,76 @@
+From a7ed0b914a07feff61bc285355da219158997db2 Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Wed, 28 Oct 2026 09:34:09 +0000
+Subject: [PATCH] gd: hci: drop responses to vendor commands the stack did not
+ send
+
+The Unisoc WCN kernel driver (UWE5622, e.g. in the Teclast P80 with an
+Allwinner A133) sends its own vendor-specific commands to the controller
+on every suspend and resume (bt_tx_powerchange: 0xFD09, then 0xFD0D),
+and the controller's responses reach the stack too:
+
+  hci_layer.cc:473 on_hci_event: Received COMMAND_COMPLETE(0x0e) event
+  with OpCode Unknown OpCode(0xfd09) without a waiting command(is the
+  HAL sending commands, but not handling the events?)
+
+Bluetooth then aborts on every suspend while it is on (30 times in three
+hours on the P80). Android 10's stack, which the vendor shipped, logged
+and dropped such events. Do the same for Command Complete and Command
+Status events of vendor-specific opcodes (OGF 0x3f) that the stack is not
+waiting for.
+
+Change-Id: I0f42af3cddef083b5df8e4d7cef967544d3e1d96
+---
+ system/gd/hci/hci_layer.cc | 34 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
+
+diff --git a/system/gd/hci/hci_layer.cc b/system/gd/hci/hci_layer.cc
+index ee3b791..b46a4e0 100644
+--- a/system/gd/hci/hci_layer.cc
++++ b/system/gd/hci/hci_layer.cc
+@@ -456,8 +456,42 @@ struct HciLayer::impl {
+     }
+   }
+ 
++  // Responses to vendor-specific commands that the stack did not send. The Unisoc WCN kernel
++  // driver (UWE5622, e.g. in the Teclast P80) sends its own vendor commands to the controller on
++  // every suspend and resume (0xFD09, 0xFD0D), and their responses reach the stack as well. The
++  // pre-GD stack logged and dropped such events; aborting on them crash-loops Bluetooth whenever
++  // the device sleeps with Bluetooth on.
++  bool drop_foreign_vendor_command_response(EventView event) {
++    OpCode op_code = OpCode::NONE;
++    if (event.GetEventCode() == EventCode::COMMAND_COMPLETE) {
++      auto view = CommandCompleteView::Create(event);
++      if (!view.IsValid()) {
++        return false;
++      }
++      op_code = view.GetCommandOpCode();
++    } else if (event.GetEventCode() == EventCode::COMMAND_STATUS) {
++      auto view = CommandStatusView::Create(event);
++      if (!view.IsValid()) {
++        return false;
++      }
++      op_code = view.GetCommandOpCode();
++    } else {
++      return false;
++    }
++    bool is_vendor_specific = (static_cast<int>(op_code) & (0x3f << 10)) == (0x3f << 10);
++    if (!is_vendor_specific || op_code == waiting_command_) {
++      return false;
++    }
++    log::warn("Dropping {} event for vendor command {} that the stack did not send",
++              EventCodeText(event.GetEventCode()), OpCodeText(op_code));
++    return true;
++  }
++
+   void on_hci_event(EventView event) {
+     log::assert_that(event.IsValid(), "assert failed: event.IsValid()");
++    if (drop_foreign_vendor_command_response(event)) {
++      return;
++    }
+     if (command_queue_.empty()) {
+       auto event_code = event.GetEventCode();
+       // BT Core spec 5.2 (Volume 4, Part E section 4.4) allows anytime
+-- 
+2.25.1
+

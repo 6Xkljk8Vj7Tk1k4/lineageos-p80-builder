@@ -1,0 +1,14 @@
+# Synced LineageOS source tree, build output and compiler cache (hundreds of GB)
+src/
+ccache/
+out/
+# Stock firmware, extracted images and release files stay local
+firmware/
+release/
+# Never commit signing keys or build artifacts
+keys/
+*.pk8
+*.pem
+*.img
+*.xz
+*.zip

@@ -1,0 +1,68 @@
+From cb844d20a6aa8a8ce719b02ca54155f73da995ca Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 14:39:35 +0000
+Subject: [PATCH 08/17] base: no telephony, fingerprint, TrebleApp or other
+ devices' overlays
+
+For the Teclast P80 only:
+- do not declare the telephony (GSM, IMS) and fingerprint features the
+  tablet does not have, so Android shows no SIM or fingerprint UI;
+- install only the generic overlays that apply here (high-priority misc,
+  night mode, tethering) instead of TrebleApp and the ~450 overlays for
+  other devices; WifiOverlay is left out because it also allows enterprise
+  Wi-Fi without validating the server certificate;
+- drop the modem helpers (QcRilAm, Iwlan, QualifiedNetworksService,
+  MtkInCallService, slsi-booted).
+---
+ base.mk | 22 ++++++++--------------
+ 1 file changed, 8 insertions(+), 14 deletions(-)
+
+diff --git a/base.mk b/base.mk
+index 9884e8d..b45e887 100644
+--- a/base.mk
++++ b/base.mk
+@@ -1,9 +1,5 @@
+-# Huawei devices don't declare fingerprint and telephony hardware feature
+-# TODO: Proper detection
++# The Teclast P80 has neither a modem nor a fingerprint sensor: declare neither feature.
+ PRODUCT_COPY_FILES := \
+-    frameworks/native/data/etc/android.hardware.fingerprint.xml:system/etc/permissions/android.hardware.fingerprint.xml \
+-    frameworks/native/data/etc/android.hardware.telephony.gsm.xml:system/etc/permissions/android.hardware.telephony.gsm.xml \
+-    frameworks/native/data/etc/android.hardware.telephony.ims.xml:system/etc/permissions/android.hardware.telephony.ims.xml \
+     frameworks/native/data/etc/android.hardware.bluetooth.xml:system/etc/permissions/android.hardware.bluetooth.xml \
+     frameworks/native/data/etc/android.hardware.bluetooth_le.xml:system/etc/permissions/android.hardware.bluetooth_le.xml \
+     frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
+@@ -20,7 +16,13 @@ PRODUCT_COPY_FILES += \
+ SYSTEM_EXT_PRIVATE_SEPOLICY_DIRS += device/phh/treble/sepolicy
+ PRODUCT_PACKAGE_OVERLAYS += device/phh/treble/overlay
+ 
+-$(call inherit-product, vendor/hardware_overlay/overlay.mk)
++# Only the generic TrebleDroid overlays that apply to the Teclast P80: no TrebleApp, no
++# overlays for other devices, no IMS/telephony ones, no WifiOverlay (it also allows
++# enterprise Wi-Fi without server certificate validation).
++PRODUCT_PACKAGES += \
++    treble-overlay-highpriomisc \
++    treble-overlay-NightMode \
++    treble-overlay-tethering
+ $(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit.mk)
+ $(call inherit-product, $(SRC_TARGET_DIR)/product/aosp_base_telephony.mk)
+ 
+@@ -243,15 +245,7 @@ PRODUCT_COPY_FILES += \
+ PRODUCT_PACKAGES += \
+     evgrab \
+ 
+-# QCOM in-call audio fix as a standalone app
+-PRODUCT_PACKAGES += \
+-    QcRilAm
+ 
+-PRODUCT_PACKAGES += \
+-    slsi-booted \
+-    Iwlan \
+-    QualifiedNetworksService \
+-    MtkInCallService \
+ 
+ # Two-pane layout in Settings
+ $(call inherit-product, $(SRC_TARGET_DIR)/product/window_extensions.mk)
+-- 
+2.53.0
+

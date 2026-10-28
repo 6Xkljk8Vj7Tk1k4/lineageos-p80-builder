@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  TrebleDroid GSI parts on top of LineageOS 23.2, after MisterZtr's
+  https://github.com/MisterZtr/treble_manifest (branch lineage-23.2), without
+  vendor/gapps (GApps builds only). Third-party repositories are pinned to the
+  commits current on 2026-10-27, so an upstream change cannot silently break the
+  patches; LineageOS repositories follow the branch for the security updates.
+-->
+<manifest>
+  <remote name="git-hub" fetch="https://github.com/" />
+
+  <project path="device/phh/treble" name="TrebleDroid/device_phh_treble" remote="git-hub" revision="ad694645eb591f00b3acced10b546397812435ec" />
+  <project path="treble_app" name="TrebleDroid/treble_app" remote="git-hub" revision="96acf04e74d42a08cc841688686ad3c5d8bd5790" />
+  <project path="vendor/hardware_overlay" name="MisterZtr/vendor_hardware_overlay" remote="git-hub" revision="fcd3782f7262b82ff3a34115d45a540f63d42508" />
+  <project path="vendor/vndk-tests" name="phhusson/vendor_vndk-tests" remote="git-hub" revision="533390a1d6bc98d86de6b9aab56825c1f03fddcb" />
+  <project path="vendor/interfaces" name="TrebleDroid/vendor_interfaces" remote="git-hub" revision="a2271d260e226e8de5cb1e8c15a229dc90c007dd" />
+  <project path="vendor/lptools" name="phhusson/vendor_lptools" remote="git-hub" revision="c8be7de57b80eab61a6f94ec86464a01fb9056f2" />
+  <project path="vendor/magisk" name="phhusson/vendor_magisk" remote="git-hub" revision="d8056f8032a0f60f365ddfe5e9fccd7eaf3a655d" />
+
+  <project path="packages/apps/QcRilAm" name="AndyCGYan/android_packages_apps_QcRilAm" remote="git-hub" revision="dc599b67cc1e7e9a62ca15eef605e3b2546d0d42" />
+
+  <project path="prebuilts/vndk/v28" name="naz664/prebuilts_vndk_v28" remote="git-hub" revision="507526a5b27a170aea338ff747c7d6ecc9bb91bb" />
+  <project path="prebuilts/vndk/v29" name="platform/prebuilts/vndk/v29" remote="aosp" clone-depth="1" revision="bef5d37dda9360940964f097d612c8032e140961" />
+  <project path="prebuilts/vndk/v30" name="platform/prebuilts/vndk/v30" remote="aosp" clone-depth="1" revision="5f9884aa352825291757dfd6694b874ad8c1805e" />
+
+  <project path="LineageOS_gsi" name="MisterZtr/LineageOS_gsi" remote="git-hub" revision="7bf212f449d1aa253ebc97b1ab3c4924be88effa" />
+
+  <project path="hardware/oplus" name="LineageOS/android_hardware_oplus" remote="git-hub" revision="lineage-23.2" />
+</manifest>

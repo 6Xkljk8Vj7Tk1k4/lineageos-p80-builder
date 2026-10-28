@@ -1,0 +1,36 @@
+From 0d87eb08cd200fb9bb8d2499ee08f30c27b311ab Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 19:52:00 +0100
+Subject: [PATCH 06/17] lineage_arm64_bvN4: identify as the Teclast P80 tablet
+
+This build only targets the Teclast P80 (G3M2). Show it as "P80" by
+Teclast instead of "Generic System" by google, and use the tablet build
+characteristics like the stock firmware (ro.build.characteristics=tablet).
+---
+ lineage_arm64_bvN4.mk | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/lineage_arm64_bvN4.mk b/lineage_arm64_bvN4.mk
+index 13ff8c9..6a454bf 100644
+--- a/lineage_arm64_bvN4.mk
++++ b/lineage_arm64_bvN4.mk
+@@ -6,11 +6,13 @@ $(call inherit-product, device/phh/treble/base.mk)
+ $(call inherit-product, device/phh/treble/lineage.mk)
+ 
+ PRODUCT_NAME := lineage_arm64_bvN4
+-PRODUCT_BRAND := google
+-PRODUCT_MODEL := Generic System
++PRODUCT_BRAND := Teclast
++PRODUCT_SYSTEM_BRAND := Teclast
++PRODUCT_MODEL := P80
++PRODUCT_MANUFACTURER := Teclast
+ 
+ # Overwrite the inherited "emulator" characteristics
+-PRODUCT_CHARACTERISTICS := device
++PRODUCT_CHARACTERISTICS := tablet
+ 
+ LINEAGE_BUILDTYPE := VANILLA
+ LINEAGE_BUILD := GSI
+-- 
+2.53.0
+

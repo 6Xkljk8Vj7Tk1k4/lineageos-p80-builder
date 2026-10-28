@@ -1,0 +1,35 @@
+From 3ac19215a2dc5f8de532d722ec2edc4ad2e1643e Mon Sep 17 00:00:00 2001
+From: P80 builder <builder@localhost>
+Date: Tue, 27 Oct 2026 19:52:00 +0100
+Subject: [PATCH 15/17] Teclast P80: silence the vendor HALs' debug logging
+
+One idle minute produced ~1,600 log lines, ~690 of them the audio HAL's
+verbose "audio_platform: mode(..),devices(..):platform device:OUT_SPK"
+(about every 87 ms while audio plays) and ~285 the Allwinner power HAL's
+"DO NOTHING BEFORE BOOT_COMPLETE"/"check common policy fail" on every
+hint. Raise those tags' minimum level to warning so liblog drops them in
+the HAL processes. (The power HAL's scene control stays inactive: once
+"boot complete" it would cap the CPU at 1.2 GHz on the home screen.)
+---
+ system.prop | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/system.prop b/system.prop
+index 15dbb56..7ab80b4 100644
+--- a/system.prop
++++ b/system.prop
+@@ -84,3 +84,11 @@ persist.sys.sf.color_saturation=1.0
+ 
+ # Teclast P80: no modem, so there is nothing to share; hide hotspot and tethering.
+ ro.tether.denied=true
++
++# Teclast P80: the vendor HALs log at verbose/debug level in a release build. The audio HAL
++# writes ~11 lines per second whenever audio plays ("audio_platform: mode(...),devices(...)"),
++# the Allwinner power HAL several per touch ("DO NOTHING BEFORE BOOT_COMPLETE"). With these
++# properties liblog drops the messages in the sending process before formatting them.
++log.tag.audio_platform=W
++log.tag.AW_PowerHAL=W
++log.tag.AW_PowerHAL_Platform=W
+-- 
+2.53.0
+
